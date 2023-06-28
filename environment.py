@@ -1,17 +1,29 @@
 import torch
 import torch.nn.functional as F
+import math
 
 class SimulationEnvironment0:
-    def __init__(self, num_simulations=1, num_blackholes=2, force_constant=0.1, velocity_scale=0.1, crash_reward=-1.0, goal_reward=1.0, goal_threshold=0.05, device='cpu'):
+    def __init__(self, num_simulations=1, 
+                 num_blackholes=2, 
+                 force_constant=0.1, 
+                 velocity_scale=0.1, 
+                 crash_reward=-1.0, 
+                 goal_reward=1.0, 
+                 goal_threshold=0.05, 
+                 max_steps = 100,
+                 device='cpu'):
         self.num_simulations = num_simulations
         self.num_blackholes = num_blackholes
         self.force_constant = force_constant
         self.velocity_scale = velocity_scale
         self.crash_reward = crash_reward
         self.goal_reward = goal_reward
+        self.crash_threshold = math.pow(force_constant,1/3)
         self.goal_threshold = goal_threshold
         self.device = device
+        self.max_steps = max_steps
 
+        self.steps = torch.zeros(num_simulations, device=device)
         # Generate random states for space ship, goal, and black holes
         self.states = torch.rand((num_simulations, 1 + num_blackholes + 1, 2), device=device)
         # self.states[:,1] = 0.25
@@ -24,6 +36,7 @@ class SimulationEnvironment0:
         self.states[is_terminal] = torch.rand((is_terminal.sum().item(), 1 + self.num_blackholes + 1, 2), device=self.device)
         # self.states[:,1] = 0.25
         # self.states[:,2:] = 0.75
+        self.steps[is_terminal]=0
 
     @torch.no_grad()
     def step(self, actions):
@@ -49,10 +62,12 @@ class SimulationEnvironment0:
 
         # Check for terminal conditions (crash into a black hole or reach the goal)
         distance_to_blackholes = torch.norm(next_ship_positions.unsqueeze(1) - blackhole_positions, dim=2)
-        is_crashed = (self.force_constant / distance_to_blackholes.pow(2)) > distance_to_blackholes
+        #is_crashed = (self.force_constant / distance_to_blackholes.pow(2)) > distance_to_blackholes
+        is_crashed = distance_to_blackholes < self.crash_threshold
         is_crashed = is_crashed.any(dim=1)
         is_goal_reached = goal_distance_after < self.goal_threshold
-        is_terminal = is_crashed | is_goal_reached
+        self.steps+=1
+        is_terminal = is_crashed | is_goal_reached | (self.steps>=self.max_steps)
 
         rewards[is_crashed] = self.crash_reward
         rewards[is_goal_reached] = self.goal_reward
