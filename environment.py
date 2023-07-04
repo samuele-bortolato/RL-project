@@ -86,3 +86,42 @@ class SimulationEnvironment0:
 
         return rewards, self.states.clone(), is_terminal
     
+
+
+
+
+
+
+
+"""
+from environment import SimulationEnvironment0
+
+sim = SimulationEnvironment0(num_blackholes=2,force_constant=0.002,velocity_scale=0.01)
+g_radious = sim.goal_threshold
+bh_radious = sim.crash_threshold
+
+from IPython.display import clear_output
+
+import matplotlib.collections as mc
+
+for i in range(10):
+    actions = torch.rand((1,2))*2-1
+    rewards, next_states, is_terminal = sim.step(actions,)
+    print(rewards, next_states, is_terminal)
+    states = sim.get_state()
+    print(states)
+    fig, ax = plt.subplots()
+    plt.plot(states[0,0,0],states[0,0,1],'b*',markersize=10)      # ship
+    #circles = plt.Circle(states[0,2], 0.2, color='r')
+    p_bh = [plt.Circle(state, bh_radious) for state in states[0,2:]]
+    c_bh = mc.PatchCollection(p_bh, color='red')
+    ax.add_collection(c_bh)
+    p_g = plt.Circle(states[0,1], g_radious, color='green')
+    ax.add_artist(p_g)
+    ax.set_aspect('equal')
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+    clear_output(wait=True)
+    plt.show()
+    time.sleep(0.01)
+"""
