@@ -58,7 +58,7 @@ class SimulationEnvironment0:
         self.states[:, 0, :] = next_ship_positions
 
         goal_distance_after = torch.norm(next_ship_positions - goal_position, dim=1)
-        rewards = goal_distance_before - goal_distance_after
+        rewards = (goal_distance_before - goal_distance_after) * 0. # torch.zeros_like(goal_distance_after)
 
         # Check for terminal conditions (crash into a black hole or reach the goal)
         distance_to_blackholes = torch.norm(next_ship_positions.unsqueeze(1) - blackhole_positions, dim=2)

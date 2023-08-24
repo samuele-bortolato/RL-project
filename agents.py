@@ -5,18 +5,21 @@ import math
 
 
 class Agent(torch.nn.Module):
-    def __init__(self, in_points, hidden_dim, levels=2, input_type='complete', actor=True, critic=True, action_dimension=25, value_dimension=255):
+    def __init__(self, in_dim, hidden_dim, levels=2, input_type='complete', actor=True, critic=True, return_hidden=True, action_dimension=25, value_dimension=255, ):
         super().__init__()
-        self.in_points = in_points
-        in_features = in_points*2
+        self.in_points = in_dim//2
+
+        self.actor = actor
+        self.critic = critic
+        self.return_hidden = return_hidden
 
         self.input_type = input_type
         if input_type=='base':
-            self.l1 = torch.nn.Linear(in_features, hidden_dim)
+            self.l1 = torch.nn.Linear(in_dim, hidden_dim)
         elif input_type=='augmented':
-            self.l1 = torch.nn.Linear(in_features + in_features**2, hidden_dim)
+            self.l1 = torch.nn.Linear(in_dim + in_dim**2, hidden_dim)
         elif input_type=='complete':
-            self.l1 = torch.nn.Linear(in_features + in_features**2 + in_points*(in_points-1), hidden_dim)
+            self.l1 = torch.nn.Linear(in_dim + in_dim**2 + self.in_points*(self.in_points-1), hidden_dim)
         else:
             assert False, "Unknown input configuration"
         
@@ -26,19 +29,12 @@ class Agent(torch.nn.Module):
             lr1 = torch.nn.Linear(hidden_dim, hidden_dim)
             lr2 = torch.nn.Linear(hidden_dim, hidden_dim)
             self.L_residual.append(torch.nn.ParameterList([lr1,lr2]))
-        
-        self.actor = actor
-        self.critic = critic
 
         if actor:
             self.action = torch.nn.Linear(hidden_dim, action_dimension)
 
         if critic:
             self.value = torch.nn.Linear(hidden_dim, value_dimension)
-            with torch.no_grad():
-                self.value.weight[:] = 1
-                self.value.bias[:]= 0
-                pass
 
     def forward(self, x):
 
@@ -71,11 +67,10 @@ class Agent(torch.nn.Module):
             x = torch.relu(lr2(x)) + xr
 
         if self.actor and self.critic:
-            return self.action(x), self.value(x)
+            return self.action(x), self.value(x), x if self.return_hidden else None
         
         elif self.critic:
-            return None, self.value(x)
+            return None, self.value(x), x if self.return_hidden else None
         
         elif self.actor:
-            return self.action(x), None
-        
+            return self.action(x), None, x if self.return_hidden else None

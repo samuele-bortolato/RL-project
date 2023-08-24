@@ -121,9 +121,9 @@ class Prioritized_Replay_Buffer():
                     action_shape, 
                     size=2**15, 
                     batch_size=256, 
-                    prioritization=0.9,
+                    prioritization=1,
                     prioritized_drop = False, 
-                    prioritization_drop=0.9, 
+                    prioritization_drop=1, 
                     device='cpu'):
         
         self.state_shape = state_shape
@@ -186,7 +186,7 @@ class Prioritized_Replay_Buffer():
                     self.weights[self.elems :] = weights[:i]
 
                     w = 1 / self.weights
-                    w = (w) * self.prioritization_drop + torch.full_like(self.weights[:self.elems], (1-self.prioritization_drop)/self.elems*w.sum())
+                    w = (w) .pow(self.prioritization_drop)
                     idx_replace = list(torch.utils.data.WeightedRandomSampler(w, n-i, replacement=False))
 
                     if torch.any(self.rewards[idx_replace]==1):
@@ -261,8 +261,9 @@ class Prioritized_Replay_Buffer():
     def get_batch(self, repeat=True):
 
         n = self.batch_size if repeat else min(self.batch_size,self.elems)
-        w = torch.exp(self.weights[:self.elems]-self.weights[:self.elems].max())
-        w = w/w.sum() * self.prioritization + torch.full_like(self.weights[:self.elems],(1-self.prioritization)/self.elems) 
+        # w = torch.exp(self.weights[:self.elems]-self.weights[:self.elems].max())
+        # w = w/w.sum() * self.prioritization + torch.full_like(self.weights[:self.elems],(1-self.prioritization)/self.elems)
+        w = self.weights.pow(self.prioritization)
         self.last_idx = torch.tensor(list(torch.utils.data.WeightedRandomSampler(w, n, replacement=repeat)), device=self.device)
 
         states = self.states[self.last_idx] 
@@ -284,4 +285,93 @@ class Prioritized_Replay_Buffer():
 
 
 
-    
+class Replay_Buffer_Segments():
+    def __init__(   self, 
+                    state_shape, 
+                    action_shape,
+                    params_shape,
+                    segment_lenght, 
+                    num_simulations,
+                    num_steps = 1024, 
+                    batch_size=256, 
+                    device='cpu'):
+        
+        self.state_shape = state_shape
+        self.action_shape = action_shape
+
+        self.states = torch.zeros((num_simulations, num_steps) + state_shape, device=device)
+        self.actions = torch.zeros((num_simulations, num_steps) + action_shape, device=device)
+        self.act_params = torch.zeros((num_simulations, num_steps) + params_shape, device=device)
+        self.action_probs = torch.zeros((num_simulations, num_steps), device=device)
+        self.rewards = torch.zeros((num_simulations, num_steps), device=device)
+        self.terminals = torch.zeros((num_simulations, num_steps), dtype=torch.bool, device=device)
+
+        self.num_simulations = num_simulations
+        self.num_steps = num_steps
+        self.elems = 0
+        self.idx = 0
+        self.batch_size = batch_size
+        self.segment_lenght = segment_lenght
+
+        self.device = device
+
+        self.last_idx = None
+
+
+    @torch.no_grad()
+    def add_experience(self, states, actions, action_params, action_probs, rewards, terminals):
+
+        assert states.shape[0]==self.num_simulations, "num simulations don't match experience passed"
+
+        self.states[:, self.idx] = states
+        self.actions[:, self.idx] = actions.reshape(states.shape[0],-1)
+        self.act_params[:, self.idx] = action_params.reshape(states.shape[0],-1)
+        self.action_probs[:, self.idx] = action_probs
+        self.rewards[:, self.idx] = rewards
+        self.terminals[:, self.idx] = terminals
+
+        self.idx = (self.idx + 1) % self.num_steps
+
+        if self.elems < self.num_steps:
+            self.elems += 1
+
+    @torch.no_grad()
+    def get_batch(self,):
+
+        idx = torch.randint(0, self.elems - self.segment_lenght + 1, (self.batch_size,), device=self.device) + (self.idx % self.elems)
+        sim_n = torch.randint(0,self.num_simulations,(self.batch_size,), device=self.device)
+
+        idx = (idx[:,None] + torch.arange(self.segment_lenght, device=self.device)[None]) % self.elems
+        sim_n = sim_n[:,None]
+
+        states = self.states[sim_n, idx]
+        actions = self.actions[sim_n, idx]
+        act_params = self.act_params[sim_n, idx]
+        action_probs = self.action_probs[sim_n, idx]
+        rewards = self.rewards[sim_n, idx]
+        terminals = self.terminals[sim_n, idx]
+
+        return states, actions, act_params, action_probs, rewards, terminals
+
+    @torch.no_grad()
+    def get_last_segment(self,):
+
+        start = (self.idx - self.segment_lenght) % self.elems
+        end = self.idx
+
+        if self.idx >= self.segment_lenght:
+            states = self.states[:, start:end]
+            actions = self.actions[:, start:end]
+            act_params = self.act_params[:, start:end]
+            action_probs = self.action_probs[:, start:end]
+            rewards = self.rewards[:, start:end]
+            terminals = self.terminals[:, start:end]
+        else:
+            states = torch.concat([self.states[:, start:], self.states[:, :end]], 1)
+            actions = torch.concat([self.actions[:, start:], self.actions[:, :end]], 1)
+            act_params = torch.concat([self.act_params[:, start:], self.act_params[:, :end]], 1)
+            action_probs = torch.concat([self.action_probs[:, start:], self.action_probs[:, :end]], 1)
+            rewards = torch.concat([self.rewards[:, start:], self.rewards[:, :end]], 1)
+            terminals = torch.concat([self.terminals[:, start:], self.terminals[:, :end]], 1)
+
+        return states, actions, act_params, action_probs, rewards, terminals

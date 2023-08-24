@@ -11,8 +11,8 @@ def two_hot_encode(expecter_target_value, smr, sr, shr, smoothing=1e-2, device='
     # create targets for critic
     simlog = (expecter_target_value.abs()+1).log()*expecter_target_value.sign()
     y = torch.zeros(len(simlog), sr, device=device)
-    y[torch.arange(len(simlog), dtype=torch.long),(simlog.clip(-smr,smr)*shr/smr+shr).floor().long()] = 1-(simlog.clip(-smr,smr)*shr/smr+shr).frac()
-    y[torch.arange(len(simlog), dtype=torch.long),(simlog.clip(-smr,smr)*shr/smr+shr).floor().long()+1] = (simlog.clip(-smr,smr)*shr/smr+shr).frac()
+    y[torch.arange(len(simlog), dtype=torch.long),(simlog*shr/smr+shr).floor().long().clip(0,sr-1)] = 1-(simlog.clip(-smr,smr)*shr/smr+shr).frac()
+    y[torch.arange(len(simlog), dtype=torch.long),((simlog.clip(-smr,smr)*shr/smr+shr).floor().long()+1).clip(0,sr-1)] = (simlog.clip(-smr,smr)*shr/smr+shr).frac()
 
     # soft targets
     y = y*(1-smoothing) + torch.ones_like(y)/sr*smoothing 
