@@ -324,7 +324,7 @@ class Replay_Buffer_Segments():
         assert states.shape[0]==self.num_simulations, "num simulations don't match experience passed"
 
         self.states[:, self.idx] = states
-        self.actions[:, self.idx] = actions.reshape(states.shape[0],-1)
+        self.actions[:, self.idx] = actions.reshape((states.shape[0],) + self.action_shape)
         self.act_params[:, self.idx] = action_params.reshape(states.shape[0],-1)
         self.action_probs[:, self.idx] = action_probs
         self.rewards[:, self.idx] = rewards
