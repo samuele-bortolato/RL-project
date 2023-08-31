@@ -147,8 +147,8 @@ def validation_plots(tb_writer, st, batch_size, V, target_V, actor, decode_value
     Values = decode_values(Values).cpu()
     V_t = decode_values(V_t).cpu()
 
-    tb_writer.add_image('V', (Values.reshape(1,100,100)/2+0.5), i)
-    tb_writer.add_image('V_t', V_t.reshape(1,100,100)/2+0.5, i)
+    tb_writer.add_image('V', (Values.reshape(1,100,100)/2+0.5).clip(0,1)*(1-1e-5), i)
+    tb_writer.add_image('V_t', (V_t.reshape(1,100,100)/2+0.5).clip(0,1)*(1-1e-5), i)
 
     # plot the mean.tanh() (not the real mean of the distribution of the tanh)
     pos = st[:,0].reshape(100,100,-1)[::2,::2]
