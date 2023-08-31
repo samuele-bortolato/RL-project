@@ -11,9 +11,11 @@ dependencies:
       - pandas
       - scikit-learn
       - scipy
+      - matplotlib
       - tdqm
       - tensorboard==2.13.0
       - tensorboard-data-server==0.7.1
+      - --extra-index-url https://download.pytorch.org/whl/cu116
       - torch==1.13.1+cu116
 prefix: C:\Users\Sam\miniconda3\envs\torch
 
