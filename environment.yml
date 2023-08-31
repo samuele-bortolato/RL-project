@@ -1,0 +1,22 @@
+name: torch
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - ipykernel
+  - pip:
+      - numpy
+      - pandas
+      - scikit-learn
+      - scipy
+      - tdqm
+      - tensorboard==2.13.0
+      - tensorboard-data-server==0.7.1
+      - torch==1.13.1+cu116
+prefix: C:\Users\Sam\miniconda3\envs\torch
+
+
+
+
+
