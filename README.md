@@ -9,6 +9,8 @@ I took inspiration by Actor-Critic with Experience Replay (ACER) for the estimat
 I also tested different architecture and features to make the neural networks more suited to deal with coordinates as inputs.
 For testing a simple low dimensional environment with sparse rewad has been created.
 
+For the complete details of the project see the [technical report](resources/report.pdf)
+
 Utilization of existing code or RL-libraries was not allowed and it's all written from scratch.
 
 
