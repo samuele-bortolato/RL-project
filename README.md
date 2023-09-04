@@ -47,10 +47,11 @@ The code plots the policy and the value function for a validation plane, which c
 
 To visualize the policy in action use visualize_policy.ipynb where you can set the parameters of the simulations and run it with an agent.
 
+<p float="left">
+  <img src="resources/original.gif" width="45%"/>
+  <img src="resources/final.gif" width="45%"/>
+</p>
 
-
-<img src="resources/original.gif" width="45%"/>
-<img src="resources/final.gif" width="45%"/>
 
 Here is an example of the visualization where the green star is the space-ship that has to reach the goal (green dot) while being pulled by the black-hole (red dot). On the left the agent before training and on the right after training.
 
