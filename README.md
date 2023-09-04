@@ -49,8 +49,8 @@ To visualize the policy in action use visualize_policy.ipynb where you can set t
 
 
 
-<img src="resources/original.gif" width="48%"/>
-<img src="resources/final.gif" width="48%"/>
+<img src="resources/original.gif" width="45%"/>
+<img src="resources/final.gif" width="45%"/>
 
 Here is an example of the visualization where the green star is the space-ship that has to reach the goal (green dot) while being pulled by the black-hole (red dot). On the left the agent before training and on the right after training.
 
