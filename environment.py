@@ -24,30 +24,27 @@ class SimulationEnvironment0:
         self.max_steps = max_steps
 
         self.steps = torch.zeros(num_simulations, device=device)
+
         # Generate random states for space ship, goal, and black holes
         self.states = torch.rand((num_simulations, 1 + num_blackholes + 1, 2), device=device)
-        # self.states[:,1] = 0.25
-        # self.states[:,2:] = 0.75
+
 
     def get_state(self):
         return self.states.clone()
 
     def reset(self, is_terminal):
         self.states[is_terminal] = torch.rand((is_terminal.sum().item(), 1 + self.num_blackholes + 1, 2), device=self.device)
-        # self.states[:,1] = 0.25
-        # self.states[:,2:] = 0.75
         self.steps[is_terminal]=0
 
     @torch.no_grad()
     def step(self, actions):
         rewards = torch.zeros(self.num_simulations)
-        #next_states = self.states.clone()
 
         # Update ship's position based on actions and attractive forces from black holes
         ship_positions = self.states[:, 0, :]
         goal_position = self.states[:, 1, :]
         blackhole_positions = self.states[:, 2:, :]
-        goal_distance_before = torch.norm(ship_positions - goal_position, dim=1)
+        #goal_distance_before = torch.norm(ship_positions - goal_position, dim=1)
 
         distance = blackhole_positions - ship_positions.unsqueeze(1)
         inv_distance = 1 / torch.norm(distance, dim=2)
@@ -58,11 +55,10 @@ class SimulationEnvironment0:
         self.states[:, 0, :] = next_ship_positions
 
         goal_distance_after = torch.norm(next_ship_positions - goal_position, dim=1)
-        rewards = (goal_distance_before - goal_distance_after) * 0. # torch.zeros_like(goal_distance_after)
+        #rewards = (goal_distance_before - goal_distance_after) * 0.1 
 
         # Check for terminal conditions (crash into a black hole or reach the goal)
         distance_to_blackholes = torch.norm(next_ship_positions.unsqueeze(1) - blackhole_positions, dim=2)
-        #is_crashed = (self.force_constant / distance_to_blackholes.pow(2)) > distance_to_blackholes
         is_crashed = distance_to_blackholes < self.crash_threshold
         is_crashed = is_crashed.any(dim=1)
         is_goal_reached = goal_distance_after < self.goal_threshold
@@ -72,17 +68,9 @@ class SimulationEnvironment0:
         rewards[is_crashed] = self.crash_reward
         rewards[is_goal_reached] = self.goal_reward
 
-        # if torch.any(is_terminal):
-        #     #print(rewards[is_terminal])
-        #     print(self.states[is_terminal,0])
-
-        # Reset terminated simulations
+        # Reset terminated simulations (user doesn't need to call the reset)
         if torch.any(is_terminal):
             self.reset(is_terminal)
-
-        # if torch.any(is_terminal):
-        #     #print(rewards[is_terminal])
-        #     print(self.states[is_terminal,0])
 
         return rewards, self.states.clone(), is_terminal
     

@@ -1,4 +1,4 @@
-name: torch
+name: rl-project-bortolato
 channels:
   - conda-forge
   - defaults

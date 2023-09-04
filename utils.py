@@ -41,11 +41,6 @@ def decode_action_continuous(dist, sampled_action):
     return sampled_action_decoded, log_prob
 
 
-def simlog():
-    pass
-
-def simexp():
-    pass
 
 def two_hot_encode(expecter_target_value, smr, sr, shr, smoothing=1e-2, device='cuda'):
     # create targets for critic
@@ -54,7 +49,7 @@ def two_hot_encode(expecter_target_value, smr, sr, shr, smoothing=1e-2, device='
     y[torch.arange(len(simlog), dtype=torch.long),(simlog*shr/smr+shr).floor().long().clip(0,sr-1)] = 1-(simlog.clip(-smr,smr)*shr/smr+shr).frac()
     y[torch.arange(len(simlog), dtype=torch.long),((simlog.clip(-smr,smr)*shr/smr+shr).floor().long()+1).clip(0,sr-1)] = (simlog.clip(-smr,smr)*shr/smr+shr).frac()
 
-    # soft targets
+    # soft targets (to increase stability)
     y = y*(1-smoothing) + torch.ones_like(y)/sr*smoothing 
     return y
 
@@ -65,12 +60,11 @@ def update_target_model(model, target_model, decay=1e-2):
         target_model_dict[target_weight_key] = (1-decay)*target_model_dict[target_weight_key] + decay*model_dict[weight_key]
     target_model.load_state_dict(target_model_dict)
 
-def decode_value_symlog(bin_values, Vs,):
-    # WARNING: uses global bin_values to decode the values!
+def decode_value_two_hot(bin_values, Vs,):
     Values = (torch.softmax(Vs,1)@bin_values[:,None])[:,0]
     return Values
 
-def critic_error_func_symlog( simlog_max_range, simlog_res, simlog_half_res, smoothing, X,Y,):
+def critic_error_func_two_hot( simlog_max_range, simlog_res, simlog_half_res, smoothing, X,Y,):
     y = two_hot_encode(Y, simlog_max_range, simlog_res, simlog_half_res, smoothing=smoothing)
     return torch.nn.functional.cross_entropy(X, y, reduction='none')
 
@@ -127,6 +121,7 @@ def update_batched(X, U, batch_size, b_idx):
     return X
 
 def validation_plots(tb_writer, st, batch_size, V, target_V, actor, decode_values, discrete_actions, dec_x, dec_y, fig, ax, i):
+
     # compute the value function and the action probability in each point of the validation plane
     Values = []
     V_t = []
