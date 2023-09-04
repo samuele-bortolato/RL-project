@@ -53,7 +53,7 @@ To visualize the policy in action use visualize_policy.ipynb where you can set t
 </p>
 
 
-Here is an example of the visualization where the green star is the space-ship that has to reach the goal (green dot) while being pulled by the black-hole (red dot). On the left the agent before training and on the right after training.
+Here is an example of the visualization where the blue star is the space-ship that has to reach the goal (green dot) while being pulled by the black-hole (red dot). On the left the agent before training and on the right after training.
 
 Using tensorboard is the easiest way to visualize the runs and understand the behaviour of the algorithm.
 
