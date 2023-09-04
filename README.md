@@ -1,7 +1,7 @@
 # Project for Autonomous and Adaptive Systems
 
 The goal of this project was to experiment with reinforcement learning techniques in continuous state-action spaces. 
-This work I try different ideas taken from state of the art results in model free policy gradient methods and tests how they can work together, testing the algorithms on a simple environment with continuous low dimensional state-action spaces with sparse rewards. 
+In this work I try different ideas taken from state of the art results in model free policy gradient methods and tests how they can work together, testing the algorithms on a simple environment with continuous low dimensional state-action spaces with sparse rewards. 
 
 Specifically in this work I started from a Proximal Policy Optimization (PPO) clip style algorithm and in order to encourage exploration and limit early convergence I introduced a new kind of regularization to solve the instability of the entropy regularizer in continuous action spaces. 
 I also experimented with SAC style regularization adding adding the entropy bonus directly inside the reward. I then tested the viability of adding experience replay to further increase the sample efficiency of the algorithm.
@@ -55,7 +55,7 @@ To visualize the policy in action use visualize_policy.ipynb where you can set t
 </p>
 
 
-Here is an example of the visualization where the green star is the space-ship that has to reach the goal (green dot) while being pulled by the black-hole (red dot). On the left the agent before training and on the right after training.
+Here is an example of the visualization where the blue star is the space-ship that has to reach the goal (green dot) while being pulled by the black-hole (red dot). On the left the agent before training and on the right after training.
 
 Using tensorboard is the easiest way to visualize the runs and understand the behaviour of the algorithm.
 
